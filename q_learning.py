@@ -227,9 +227,9 @@ def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes,
     for i in tqdm(range(num_episodes)):
         # Initialize video recording for the specific episode based on frequency
         if record_video and i % video_frequency == 0:
+            video_recorder = gym.wrappers.RecordVideo(env, video_path)
             if video_recorder:
                 video_recorder.close()  # Close previous video recorder
-            video_recorder = gym.wrappers.RecordVideo(env, video_path)
         
         state = env.reset()
         done = False
