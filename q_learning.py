@@ -19,7 +19,7 @@ from collections import defaultdict
 import plotting
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-
+import os
 
 
 # For Q learning code
@@ -187,55 +187,10 @@ def q_learning_best_policy(env, estimator, num_episodes, discount_factor=1.0, ep
     return stats        
 
 
-# def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes, discount_factor=1.0,
-#                                epsilon=0.0, epsilon_decay=1.0, render=False,ep_details=False):
-#     '''
-#     Given the reward function, The RL agent learns the best policy.
-#     (Used for generating final results to compare with learning with default handcrafted rewards.) 
-#     '''
-#     # Statistics during learning process
-#     stats= plotting.EpisodeStats(episode_lengths= np.zeros(num_episodes), episode_rewards = np.zeros(num_episodes))
-    
-#     for i in tqdm(range(num_episodes)):
-#         state = env.reset()
-#         done = False
-#         d = 0
-        
-#         while not done and d<=2000:
-            
-#             prob = epsilon_greedy_policy(state ,estimator, epsilon * epsilon_decay**i ,env.action_space.n)
-#             action = np.random.choice(np.arange(len(prob)), p=prob )
-#             step= env.step(action)
-            
-#             next_state = step[0]
-#             done = step[2]
-#             reward = reward_fn(state)
-#             if render:
-#                 env.render()
-            
-#             stats.episode_rewards[i] += reward
-#             stats.episode_lengths[i] += 1
-            
-#             q_values_next = estimator.predict(next_state)
-#             td_target = reward + discount_factor * np.max(q_values_next)
-#             estimator.update(state,action,td_target)
-#             state=next_state
-#             d+=1
-        
-#         if ep_details:
-#             print("Episode {} completed in {} timesteps".format(i,d))   
-    
-#     return stats        
-
-import gym
-import numpy as np
-from tqdm import tqdm
-import os
-
-def q_learning_testing_rewards_with_video(env, estimator, reward_fn, num_episodes, 
+def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes, 
                                           discount_factor=1.0, epsilon=0.0, epsilon_decay=1.0, 
-                                          record_video=False, video_path='./videos', 
-                                          video_frequency=1, ep_details=False):
+                                          record_video=True, video_path='./mountain_car_videos', 
+                                          video_frequency=1, ep_details=False, render=True):
     '''
     Given the reward function, The RL agent learns the best policy and optionally records videos.
     
@@ -267,17 +222,13 @@ def q_learning_testing_rewards_with_video(env, estimator, reward_fn, num_episode
     
     for i in tqdm(range(num_episodes)):
         # Set up video recording if enabled and on a recording episode
-        if record_video and i % video_frequency == 0:
-            # Use VecVideoRecorder for more modern gym versions
-            from gym.wrappers.vec_video_recorder import VecVideoRecorder
-            video_recorder = VecVideoRecorder(
-                env, 
-                video_path, 
-                record_video_trigger=lambda x: x % video_frequency == 0,
-                video_length=2000,  # Maximum number of frames to record
-                name_prefix=f'episode_{i}'
+        if record_video and i % 10 == 0:
+            # Use RecordVideo from Gym
+            env = gym.wrappers.RecordVideo(
+                env,
+                video_path,
+                episode_trigger=lambda episode_id: episode_id % 10 == 0,
             )
-            env = video_recorder
         
         state = env.reset()
         done = False
@@ -291,7 +242,8 @@ def q_learning_testing_rewards_with_video(env, estimator, reward_fn, num_episode
             next_state = step[0]
             done = step[2]
             reward = reward_fn(state)
-            
+            if render:
+                env.render()
             stats.episode_rewards[i] += reward
             stats.episode_lengths[i] += 1
             
@@ -308,30 +260,7 @@ def q_learning_testing_rewards_with_video(env, estimator, reward_fn, num_episode
         if record_video and i % video_frequency == 0:
             env.close()
     
-    return stats
-
-def record_q_learning_videos_1(env, estimator, reward_fn, num_episodes=10, 
-                              video_path='./mountain_car_videos'):
-    """
-    Convenience function to record videos of Q-learning episodes
-    
-    Args:
-    - env: Gym environment
-    - estimator: Value function approximator
-    - reward_fn: Custom reward function
-    - num_episodes: Number of episodes to record
-    - video_path: Directory to save videos
-    """
-    q_learning_testing_rewards_with_video(
-        env=env, 
-        estimator=estimator, 
-        reward_fn=reward_fn,
-        num_episodes=num_episodes,
-        record_video=True, 
-        video_path=video_path,
-        video_frequency=1,  # Record every episode
-        ep_details=True
-    )
+    return stats    
 
 def compare_results(env,estimator_f,estimator_dbe,num_test_trajs,epsilon_test=0.0):
     dbe_score=0
