@@ -186,11 +186,10 @@ def q_learning_best_policy(env, estimator, num_episodes, discount_factor=1.0, ep
     
     return stats        
 
-
 def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes, 
-                                          discount_factor=1.0, epsilon=0.0, epsilon_decay=1.0, 
-                                          record_video=True, video_path='./mountain_car_videos', 
-                                          video_frequency=10, ep_details=True, render=True):
+                               discount_factor=1.0, epsilon=0.0, epsilon_decay=1.0, 
+                               record_video=True, video_path='./mountain_car_videos', 
+                               video_frequency=10, ep_details=True, render=True):
     '''
     Given the reward function, The RL agent learns the best policy and optionally records videos.
     
@@ -210,27 +209,21 @@ def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes,
     Returns:
     - stats: Episode statistics
     '''
-    # Ensure video directory exists if recording
+    # Ensure video directory exists
     if record_video:
         os.makedirs(video_path, exist_ok=True)
-    
+
+    # Wrap the environment with RecordVideo if recording videos
+    if record_video:
+        env = gym.wrappers.RecordVideo(env, video_path, episode_trigger=lambda ep_id: ep_id % video_frequency == 0)
+
     # Statistics during learning process
     stats = plotting.EpisodeStats(
         episode_lengths=np.zeros(num_episodes), 
         episode_rewards=np.zeros(num_episodes)
     )
-
-    # Only wrap the environment with RecordVideo once for every video_frequency episodes
-    if record_video:
-        video_recorder = None
     
     for i in tqdm(range(num_episodes)):
-        # Initialize video recording for the specific episode based on frequency
-        if record_video and i % video_frequency == 0:
-            video_recorder = gym.wrappers.RecordVideo(env, video_path)
-            if video_recorder:
-                video_recorder.close()  # Close previous video recorder
-        
         state = env.reset()
         done = False
         d = 0
@@ -256,11 +249,9 @@ def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes,
         
         if ep_details:
             print(f"Episode {i} completed in {d} timesteps")
-        
-        # Close the video recorder if it was used and if the episode index reached the frequency
-        if record_video and i % video_frequency == 0:
-            if video_recorder:
-                video_recorder.close()  # Close the video recorder for the current episode
+
+    # Close the environment to ensure video files are finalized
+    env.close()
 
     return stats
 
