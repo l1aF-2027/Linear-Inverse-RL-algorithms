@@ -190,7 +190,7 @@ def q_learning_best_policy(env, estimator, num_episodes, discount_factor=1.0, ep
 def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes, 
                                           discount_factor=1.0, epsilon=0.0, epsilon_decay=1.0, 
                                           record_video=True, video_path='./mountain_car_videos', 
-                                          video_frequency=1, ep_details=False, render=True):
+                                          video_frequency=10, ep_details=True, render=True):
     '''
     Given the reward function, The RL agent learns the best policy and optionally records videos.
     
@@ -219,16 +219,17 @@ def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes,
         episode_lengths=np.zeros(num_episodes), 
         episode_rewards=np.zeros(num_episodes)
     )
+
+    # Only wrap the environment with RecordVideo once for every video_frequency episodes
+    if record_video:
+        video_recorder = None
     
     for i in tqdm(range(num_episodes)):
-        # Set up video recording if enabled and on a recording episode
-        if record_video and i % 10 == 0:
-            # Use RecordVideo from Gym
-            env = gym.wrappers.RecordVideo(
-                env,
-                video_path,
-                episode_trigger=lambda episode_id: episode_id % 10 == 0,
-            )
+        # Initialize video recording for the specific episode based on frequency
+        if record_video and i % video_frequency == 0:
+            if video_recorder:
+                video_recorder.close()  # Close previous video recorder
+            video_recorder = gym.wrappers.RecordVideo(env, video_path)
         
         state = env.reset()
         done = False
@@ -256,11 +257,13 @@ def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes,
         if ep_details:
             print(f"Episode {i} completed in {d} timesteps")
         
-        # Close the video recorder if it was used
+        # Close the video recorder if it was used and if the episode index reached the frequency
         if record_video and i % video_frequency == 0:
-            env.close()
-    
-    return stats    
+            if video_recorder:
+                video_recorder.close()  # Close the video recorder for the current episode
+
+    return stats
+
 
 def compare_results(env,estimator_f,estimator_dbe,num_test_trajs,epsilon_test=0.0):
     dbe_score=0
