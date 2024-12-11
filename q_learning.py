@@ -117,7 +117,7 @@ def policy_f(env, scaler,featurizer,print_ep_lens):
     estimator= Estimator(env,scaler,featurizer)
     stats =  q_learning_best_policy(env, estimator, 200, epsilon = 0.0, print_ep_lens=False)
     print("___Plotting Learning Stats of the Agent____")
-    plotting.plot_cost_to_go_mountain_car(env, estimator)
+    # plotting.plot_cost_to_go_mountain_car(env, estimator)
     plotting.plot_episode_stats(stats, smoothing_window=25)
     final_policy = greedy_policy(estimator, env.action_space.n)
     return final_policy, estimator
