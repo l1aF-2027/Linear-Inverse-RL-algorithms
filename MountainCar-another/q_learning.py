@@ -153,6 +153,17 @@ def q_learning(env, estimator, reward_fn, num_episodes, num_trajectory=0, discou
         d_vec[i] = d 
     return np.min(d_vec)     # Just for some experiments: Not used anywhere in the IRL code. 
 
+def custom_reward(state, next_state, done):
+    """
+    Hàm thưởng tùy chỉnh:
+    - Thưởng lớn khi xe xuống chân đồi.
+    - Phạt nhẹ nếu xe không tiến xa khỏi đỉnh.
+    """
+    if done:
+        return 100  # Thưởng lớn nếu xe xuống chân đồi
+    else:
+        # Phạt dựa trên khoảng cách từ đỉnh
+        return -1 * abs(next_state[0] - (-1.2))
 
 
 def q_learning_best_policy(env, estimator, num_episodes, discount_factor=1.0, epsilon=0.0, epsilon_decay=1.0, print_ep_lens=False):
@@ -171,9 +182,12 @@ def q_learning_best_policy(env, estimator, num_episodes, discount_factor=1.0, ep
             
             prob = epsilon_greedy_policy(state ,estimator, epsilon * epsilon_decay**i ,env.action_space.n)
             action = np.random.choice(np.arange(len(prob)), p=prob )
-            next_state, reward, done, _ = env.step(action)
+            next_state, _, _, _ = env.step(action)
             
+            done = next_state[0] <= -1.2
+            reward = custom_reward(state, next_state, done)
             stats.episode_rewards[i] += reward
+            
             stats.episode_lengths[i] += 1
             
             q_values_next = estimator.predict(next_state)
@@ -190,7 +204,7 @@ def reset_environment(env):
     """Khởi tạo môi trường MountainCar để xe xuất phát từ đỉnh đồi."""
     state = env.reset()
     # Đỉnh đồi nằm ở vị trí 0.5 với vận tốc bằng 0
-    env.state = np.array([env.goal_position, 0.0])
+    env.state = [0.5, 0.0]
     return env.state
 
 def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes, 
@@ -241,8 +255,8 @@ def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes,
             step = env.step(action)
             
             next_state = step[0]
-            done = step[2]
-            reward = reward_fn(state)
+            done = step[2] <= -1.2
+            reward = custom_reward(state, next_state, done)
             if render:
                 env.render()
             stats.episode_rewards[i] += reward
@@ -274,8 +288,10 @@ def compare_results(env,estimator_f,estimator_dbe,num_test_trajs,epsilon_test=0.
             for t in range(2000):
                 prob = epsilon_greedy_policy(state ,network, epsilon_test ,env.action_space.n)
                 action= np.random.choice(np.arange(len(prob)),p=prob)
-                next_state,reward,done,_= env.step(action)
+                next_state,_,_,_= env.step(action)
                 env.render()
+                done = next_state[0] <= -1.2
+                reward = custom_reward(state, next_state, done)
                 tot_reward[i]+=reward
                 if done:
                     break
