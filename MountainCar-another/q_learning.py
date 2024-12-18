@@ -206,76 +206,101 @@ def reset_environment(env):
     # Đỉnh đồi nằm ở vị trí 0.5 với vận tốc bằng 0
     env.state = [0.5, 0.0]
     return env.state
+def stay_at_bottom_reward(state, next_state, done):
+    """
+    Hàm thưởng mới:
+    - Thưởng cao cho việc ở lại dưới đồi
+    - Phạt nếu xe di chuyển lên
+    """
+    # Vị trí dưới đồi (goal state)
+    BOTTOM_POSITION = 0.5
 
-def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes, 
-                               discount_factor=1.0, epsilon=0.0, epsilon_decay=1.0, 
-                               record_video=True, video_path='./mountain_car_videos', 
-                               video_frequency=10, ep_details=True, render=True):
-    '''
-    Given the reward function, The RL agent learns the best policy and optionally records videos.
+    if done:
+        return 100  # Thưởng lớn nếu hoàn thành episode
+
+    # Khuyến khích ở lại gần vị trí dưới đồi
+    reward = 10 * (1 - abs(next_state[0] - BOTTOM_POSITION))
     
-    Args:
-    - env: Gym environment
-    - estimator: Value function approximator
-    - reward_fn: Custom reward function
-    - num_episodes: Number of episodes to run
-    - discount_factor: Discount factor for Q-learning
-    - epsilon: Initial exploration rate
-    - epsilon_decay: Decay rate for epsilon
-    - record_video: Whether to record videos
-    - video_path: Directory to save videos
-    - video_frequency: Record every nth episode
-    - ep_details: Print episode details if True
-    
-    Returns:
-    - stats: Episode statistics
-    '''
-    # Ensure video directory exists
+    # Phạt nếu xe di chuyển lên
+    if next_state[0] > state[0]:
+        reward -= 5
+
+    return reward
+
+def reset_environment_at_goal(env):
+    """
+    Khởi tạo môi trường MountainCar để xe xuất phát từ vị trí đích (dưới đồi)
+    """
+    state = env.reset()
+    # Đặt xe ở vị trí đích (0.5) với vận tốc bằng 0
+    env.state = [0.5, 0.0]
+    return env.state
+
+def modified_q_learning_testing(env, estimator, num_episodes, 
+                                discount_factor=1.0, epsilon=0.0, epsilon_decay=1.0, 
+                                record_video=True, video_path='./mountain_car_stay_bottom_videos', 
+                                video_frequency=10, ep_details=True, render=True):
+    """
+    Học chính sách để xe ở lại dưới đồi lâu nhất có thể
+    """
+    # Tạo thư mục video nếu cần
     if record_video:
         os.makedirs(video_path, exist_ok=True)
 
-    # Wrap the environment with RecordVideo if recording videos
+    # Bọc môi trường để ghi video nếu cần
     if record_video:
-        env = gym.wrappers.RecordVideo(env, video_path, episode_trigger=lambda ep_id: ep_id % video_frequency == 0)
+        env = gym.wrappers.RecordVideo(env, video_path, 
+                                       episode_trigger=lambda ep_id: ep_id % video_frequency == 0)
 
-    # Statistics during learning process
-    stats = plotting.EpisodeStats(
-        episode_lengths=np.zeros(num_episodes), 
-        episode_rewards=np.zeros(num_episodes)
-    )
+    # Theo dõi thống kê các episode
+    episode_lengths = np.zeros(num_episodes)
+    episode_rewards = np.zeros(num_episodes)
     
     for i in tqdm(range(num_episodes)):
-        state = reset_environment(env)
+        # Luôn bắt đầu từ vị trí dưới đồi
+        state = reset_environment_at_goal(env)
         done = False
-        d = 0
+        step_count = 0
         
-        while not done and d <= 2000:
+        while not done and step_count <= 2000:
+            # Chọn hành động theo chính sách epsilon-greedy
             prob = epsilon_greedy_policy(state, estimator, epsilon * epsilon_decay**i, env.action_space.n)
             action = np.random.choice(np.arange(len(prob)), p=prob)
-            step = env.step(action)
             
-            next_state = step[0]
-            done = step[2] <= -1.2
-            reward = custom_reward(state, next_state, done)
+            # Thực hiện bước di chuyển
+            next_state, _, _, _ = env.step(action)
+            
+            # Kiểm tra điều kiện kết thúc
+            done = next_state[0] <= -1.2
+            
+            # Tính toán phần thưởng mới
+            reward = stay_at_bottom_reward(state, next_state, done)
+            
+            # Render môi trường nếu được yêu cầu
             if render:
                 env.render()
-            stats.episode_rewards[i] += reward
-            stats.episode_lengths[i] += 1
             
+            # Cập nhật thống kê
+            episode_rewards[i] += reward
+            episode_lengths[i] += 1
+            
+            # Cập nhật ước lượng Q-value
             q_values_next = estimator.predict(next_state)
             td_target = reward + discount_factor * np.max(q_values_next)
             estimator.update(state, action, td_target)
+            
+            # Cập nhật trạng thái
             state = next_state
-            d += 1
+            step_count += 1
         
+        # In chi tiết episode nếu được yêu cầu
         if ep_details:
-            print(f"Episode {i} completed in {d} timesteps")
+            print(f"Episode {i} completed in {step_count} timesteps with total reward {episode_rewards[i]}")
 
-    # Close the environment to ensure video files are finalized
+    # Đóng môi trường
     env.close()
 
-    return stats
-
+    return episode_lengths, episode_rewards
 
 def compare_results(env,estimator_f,estimator_dbe,num_test_trajs,epsilon_test=0.0):
     dbe_score=0
