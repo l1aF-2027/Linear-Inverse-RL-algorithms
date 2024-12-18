@@ -163,7 +163,7 @@ def custom_reward(state, next_state, done):
         return 100  # Thưởng lớn nếu xe xuống chân đồi
     else:
         # Phạt dựa trên khoảng cách từ đỉnh
-        return -1 * abs(next_state[0] - (-1.2))
+        return -1 * abs(next_state[0] - (-0.5))
 
 
 def q_learning_best_policy(env, estimator, num_episodes, discount_factor=1.0, epsilon=0.0, epsilon_decay=1.0, print_ep_lens=False):
@@ -184,7 +184,7 @@ def q_learning_best_policy(env, estimator, num_episodes, discount_factor=1.0, ep
             action = np.random.choice(np.arange(len(prob)), p=prob )
             next_state, _, _, _ = env.step(action)
             
-            done = next_state[0] <= -1.2
+            done = next_state[0] == -0.5
             reward = custom_reward(state, next_state, done)
             stats.episode_rewards[i] += reward
             
@@ -255,7 +255,7 @@ def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes,
             step = env.step(action)
             
             next_state = step[0]
-            done = step[2] <= -1.2
+            done = step[2] ==-0.5
             reward = custom_reward(state, next_state, done)
             if render:
                 env.render()
@@ -290,7 +290,7 @@ def compare_results(env,estimator_f,estimator_dbe,num_test_trajs,epsilon_test=0.
                 action= np.random.choice(np.arange(len(prob)),p=prob)
                 next_state,_,_,_= env.step(action)
                 env.render()
-                done = next_state[0] <= -1.2
+                done = next_state[0] ==-0.5
                 reward = custom_reward(state, next_state, done)
                 tot_reward[i]+=reward
                 if done:
