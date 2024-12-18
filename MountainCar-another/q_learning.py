@@ -209,6 +209,76 @@ def q_learning_best_policy(env, estimator, num_episodes, discount_factor=1.0, ep
     
     return stats        
 
+
+def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes, 
+                               discount_factor=1.0, epsilon=0.0, epsilon_decay=1.0, 
+                               record_video=True, video_path='./mountain_car_videos', 
+                               video_frequency=10, ep_details=True, render=True):
+    '''
+    Given the reward function, The RL agent learns the best policy and optionally records videos.
+    
+    Args:
+    - env: Gym environment
+    - estimator: Value function approximator
+    - reward_fn: Custom reward function
+    - num_episodes: Number of episodes to run
+    - discount_factor: Discount factor for Q-learning
+    - epsilon: Initial exploration rate
+    - epsilon_decay: Decay rate for epsilon
+    - record_video: Whether to record videos
+    - video_path: Directory to save videos
+    - video_frequency: Record every nth episode
+    - ep_details: Print episode details if True
+    
+    Returns:
+    - stats: Episode statistics
+    '''
+    # Ensure video directory exists
+    if record_video:
+        os.makedirs(video_path, exist_ok=True)
+
+    # Wrap the environment with RecordVideo if recording videos
+    if record_video:
+        env = gym.wrappers.RecordVideo(env, video_path, episode_trigger=lambda ep_id: ep_id % video_frequency == 0)
+
+    # Statistics during learning process
+    stats = plotting.EpisodeStats(
+        episode_lengths=np.zeros(num_episodes), 
+        episode_rewards=np.zeros(num_episodes)
+    )
+    
+    for i in tqdm(range(num_episodes)):
+        state = reset_environment(env)
+        done = False
+        d = 0
+        
+        while not done and d <= 2000:
+            prob = epsilon_greedy_policy(state, estimator, epsilon * epsilon_decay**i, env.action_space.n)
+            action = np.random.choice(np.arange(len(prob)), p=prob)
+            step = env.step(action)
+            
+            next_state = step[0]
+            done = next_state[0] == -0.5
+            reward = custom_reward(state, next_state, done)
+            if render:
+                env.render()
+            stats.episode_rewards[i] += reward
+            stats.episode_lengths[i] += 1
+            
+            q_values_next = estimator.predict(next_state)
+            td_target = reward + discount_factor * np.max(q_values_next)
+            estimator.update(state, action, td_target)
+            state = next_state
+            d += 1
+        
+        if ep_details:
+            print(f"Episode {i} completed in {d} timesteps")
+
+    # Close the environment to ensure video files are finalized
+    env.close()
+
+    return stats
+
 def compare_results(env,estimator_f,estimator_dbe,num_test_trajs,epsilon_test=0.0):
     dbe_score=0
     imitator_score=0
