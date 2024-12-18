@@ -233,7 +233,7 @@ def reset_environment_at_goal(env):
     """
     state = env.reset()
     # Đặt xe ở vị trí đích (0.5) với vận tốc bằng 0
-    env.state = [0.5, 0.0]
+    env.state = [-1.0, 0.0]
     return env.state
 
 def modified_q_learning_testing(env, estimator, num_episodes, 
