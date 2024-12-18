@@ -140,7 +140,7 @@ def q_learning(env, estimator, reward_fn, num_episodes, num_trajectory=0, discou
             step= env.step(action)
             
             next_state = step[0]
-            done = step[2]
+            done = step[2]==-0.5
             if done:
                 break
             reward = reward_fn(state)    
@@ -163,7 +163,16 @@ def custom_reward(state, next_state, done):
         return 100  # Thưởng lớn nếu xe xuống chân đồi
     else:
         # Phạt dựa trên khoảng cách từ đỉnh
-        return -1 * abs(next_state[0] - (-1.2))
+        return -1 * abs(next_state[0] - (-0.5))
+
+def reset_environment(env):
+    """
+    Khởi tạo môi trường MountainCar để xe xuất phát từ vị trí đích (dưới đồi)
+    """
+    state = env.reset()
+    # Đặt xe ở vị trí đích (0.5) với vận tốc bằng 0
+    env.state = [0.5, 0.0]
+    return env.state
 
 
 def q_learning_best_policy(env, estimator, num_episodes, discount_factor=1.0, epsilon=0.0, epsilon_decay=1.0, print_ep_lens=False):
@@ -184,7 +193,7 @@ def q_learning_best_policy(env, estimator, num_episodes, discount_factor=1.0, ep
             action = np.random.choice(np.arange(len(prob)), p=prob )
             next_state, _, _, _ = env.step(action)
             
-            done = next_state[0] <= -1.2
+            done = next_state[0] == -0.5
             reward = custom_reward(state, next_state, done)
             stats.episode_rewards[i] += reward
             
@@ -199,108 +208,6 @@ def q_learning_best_policy(env, estimator, num_episodes, discount_factor=1.0, ep
              print("Episode {} completed in {} timesteps".format(i,d))
     
     return stats        
-# Đặt xe xuất phát tại đỉnh đồi
-def reset_environment(env):
-    """Khởi tạo môi trường MountainCar để xe xuất phát từ đỉnh đồi."""
-    state = env.reset()
-    # Đỉnh đồi nằm ở vị trí 0.5 với vận tốc bằng 0
-    env.state = [0.5, 0.0]
-    return env.state
-def stay_at_bottom_reward(state, next_state, done):
-    """
-    Hàm thưởng mới:
-    - Thưởng cao cho việc ở lại dưới đồi
-    - Phạt nếu xe di chuyển lên
-    """
-    # Vị trí dưới đồi (goal state)
-    BOTTOM_POSITION = 0.5
-
-    if done:
-        return 100  # Thưởng lớn nếu hoàn thành episode
-
-    # Khuyến khích ở lại gần vị trí dưới đồi
-    reward = 10 * (1 - abs(next_state[0] - BOTTOM_POSITION))
-    
-    # Phạt nếu xe di chuyển lên
-    if next_state[0] > state[0]:
-        reward -= 5
-
-    return reward
-
-def reset_environment_at_goal(env):
-    """
-    Khởi tạo môi trường MountainCar để xe xuất phát từ vị trí đích (dưới đồi)
-    """
-    state = env.reset()
-    # Đặt xe ở vị trí đích (0.5) với vận tốc bằng 0
-    env.state = [-1.0, 0.0]
-    return env.state
-
-def modified_q_learning_testing(env, estimator, num_episodes, 
-                                discount_factor=1.0, epsilon=0.0, epsilon_decay=1.0, 
-                                record_video=True, video_path='./mountain_car_stay_bottom_videos', 
-                                video_frequency=10, ep_details=True, render=True):
-    """
-    Học chính sách để xe ở lại dưới đồi lâu nhất có thể
-    """
-    # Tạo thư mục video nếu cần
-    if record_video:
-        os.makedirs(video_path, exist_ok=True)
-
-    # Bọc môi trường để ghi video nếu cần
-    if record_video:
-        env = gym.wrappers.RecordVideo(env, video_path, 
-                                       episode_trigger=lambda ep_id: ep_id % video_frequency == 0)
-
-    # Theo dõi thống kê các episode
-    episode_lengths = np.zeros(num_episodes)
-    episode_rewards = np.zeros(num_episodes)
-    
-    for i in tqdm(range(num_episodes)):
-        # Luôn bắt đầu từ vị trí dưới đồi
-        state = reset_environment_at_goal(env)
-        done = False
-        step_count = 0
-        
-        while not done and step_count <= 2000:
-            # Chọn hành động theo chính sách epsilon-greedy
-            prob = epsilon_greedy_policy(state, estimator, epsilon * epsilon_decay**i, env.action_space.n)
-            action = np.random.choice(np.arange(len(prob)), p=prob)
-            
-            # Thực hiện bước di chuyển
-            next_state, _, _, _ = env.step(action)
-            
-            # Kiểm tra điều kiện kết thúc
-            done = next_state[0] <= -1.2
-            
-            # Tính toán phần thưởng mới
-            reward = stay_at_bottom_reward(state, next_state, done)
-            
-            # Render môi trường nếu được yêu cầu
-            if render:
-                env.render()
-            
-            # Cập nhật thống kê
-            episode_rewards[i] += reward
-            episode_lengths[i] += 1
-            
-            # Cập nhật ước lượng Q-value
-            q_values_next = estimator.predict(next_state)
-            td_target = reward + discount_factor * np.max(q_values_next)
-            estimator.update(state, action, td_target)
-            
-            # Cập nhật trạng thái
-            state = next_state
-            step_count += 1
-        
-        # In chi tiết episode nếu được yêu cầu
-        if ep_details:
-            print(f"Episode {i} completed in {step_count} timesteps with total reward {episode_rewards[i]}")
-
-    # Đóng môi trường
-    env.close()
-
-    return episode_lengths, episode_rewards
 
 def compare_results(env,estimator_f,estimator_dbe,num_test_trajs,epsilon_test=0.0):
     dbe_score=0
@@ -315,7 +222,7 @@ def compare_results(env,estimator_f,estimator_dbe,num_test_trajs,epsilon_test=0.
                 action= np.random.choice(np.arange(len(prob)),p=prob)
                 next_state,_,_,_= env.step(action)
                 env.render()
-                done = next_state[0] <= -1.2
+                done = next_state[0] == -0.5
                 reward = custom_reward(state, next_state, done)
                 tot_reward[i]+=reward
                 if done:
