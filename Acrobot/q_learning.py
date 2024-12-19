@@ -55,8 +55,8 @@ class Estimator():
             # This is quite hacky.
             model.partial_fit([self.featurize_state(self.env.reset())],[0])
             self.models.append(model)
-
-
+    
+    
     def featurize_state(self, state):
         """
         Featurize the given state using the scaler and the featurizer.
@@ -155,7 +155,7 @@ def q_learning(env, estimator, reward_fn, num_episodes, num_trajectory=0, discou
             step= env.step(action)
             
             next_state = step[0]
-            done = step[2]==-0.5
+            done = step[2]
             if done:
                 break
             reward = reward_fn(state)    
@@ -207,6 +207,7 @@ def q_learning_best_policy(env, estimator, num_episodes, discount_factor=1.0, ep
             d += 1
     
     return stats
+
 
 import os
 def q_learning_testing_rewards(env, estimator, reward_fn, num_episodes, discount_factor=1.0,
@@ -286,7 +287,6 @@ def compare_results(env,estimator_f,estimator_dbe,num_test_trajs,epsilon_test=0.
     plt.legend(loc='lower right')
     plt.xlabel("Just for reward visualization.[x axis is nothing]")
     plt.ylabel("Avg Reward")
-    plt.savefig("acrobot_videos\\compare_results.png", dpi=300, bbox_inches='tight')
     plt.show()
     env.close()
     print("Expert policy score  "+" | ",dbe_score)
