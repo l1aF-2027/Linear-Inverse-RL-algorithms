@@ -155,7 +155,7 @@ def q_learning(env, estimator, reward_fn, num_episodes, num_trajectory=0, discou
             step= env.step(action)
             
             next_state = step[0]
-            done = step[2]
+            done = step[2]==-0.5
             if done:
                 break
             reward = reward_fn(state)    
