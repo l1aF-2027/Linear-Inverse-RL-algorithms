@@ -286,6 +286,7 @@ def compare_results(env,estimator_f,estimator_dbe,num_test_trajs,epsilon_test=0.
     plt.legend(loc='lower right')
     plt.xlabel("Just for reward visualization.[x axis is nothing]")
     plt.ylabel("Avg Reward")
+    plt.savefig('mountain_car_videos\\compare_results.png', dpi=300, bbox_inches='tight')
     plt.show()
     env.close()
     print("Expert policy score  "+" | ",dbe_score)
