@@ -1,0 +1,151 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[a4paper, top=2cm, bottom=2cm]{geometry}
+\usepackage{amsmath} % Để sử dụng môi trường toán học và lệnh aligned
+\usepackage{tkz-tab}
+\usepackage[vietnamese]{babel}
+\usepackage[utf8]{vietnam}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{hyperref}
+% Cấu hình lại hyperlink
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black, % Màu đen cho các liên kết trong mục lục
+    filecolor=black,
+    urlcolor=black,
+    citecolor=black
+}
+\usepackage{caption}
+% \captionsetup[figure]{labelformat=empty}
+\urlstyle{same}
+\renewcommand{\thesubsection}{\arabic{subsection}.}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\definecolor{codecomment}{rgb}{0,0.5,0.1}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codecomment},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    language={[5.3]Lua}
+}
+
+\lstset{style=mystyle}
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+
+\textbf{TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN}
+
+\textbf{KHOA KHOA HỌC MÁY TÍNH}
+
+\vspace{1cm}
+
+\textbf{BÁO CÁO ĐỒ ÁN CUỐI KÌ CS431}
+
+\vspace{1cm}
+
+\textbf{VanillaNet - Sức mạnh của Tối giản trong Học Sâu}
+
+\vspace{1cm}
+\includegraphics[width=5 cm]{logo.png}
+\vspace{1cm}
+
+\textbf{GV hướng dẫn: Nguyễn Vĩnh Tiệp}
+
+\vspace{1cm}
+
+\textbf{Nhóm thực hiện:}
+
+\vspace{0.5cm}
+
+\begin{tabular}{p{5cm}p{5cm}}
+\hline
+\textbf{Họ và tên} & \textbf{MSSV} \\
+\hline
+Huỳnh Anh Dũng & 22520278\\
+\hline
+Hà Huy Hoàng & 22520460 \\
+\hline
+Nguyễn Duy Hoàng & 22520467\\
+\hline
+Lê Phước Trung & 20522069 \\
+\hline
+\end{tabular}
+
+\vspace{1cm}
+
+\textbf{TP.HCM, ngày .. tháng .. năm 2024}
+\tableofcontents
+\end{center}
+
+\end{titlepage}
+
+
+\newpage
+\section*{1. Giới thiệu}\addcontentsline{toc}{section}{1. Giới thiệu}
+\hspace*{5mm}Triết lý nền tảng của các mô hình hiện nay là 'càng nhiều càng khác biệt' ('more is different'), điều này được chứng minh bằng các thành công vang dội trong lĩnh vực thị giác máy tính và xử lý ngôn ngữ tự nhiên. Một bước đột phá đáng chú ý trong các lĩnh vực này là sự phát triển của AlexNet [2], gồm 12 tầng và đạt hiệu suất hàng đầu trên chuẩn nhận dạng hình ảnh quy mô lớn. Xây dựng trên thành công này, ResNet [3] giới thiệu các ánh xạ đồng nhất thông qua skip connections, cho phép đào tạo các mạng nơ-ron sâu với hiệu suất cao trên nhiều ứng dụng thị giác máy tính, như phân loại hình ảnh, phát hiện đối tượng và phân đoạn ngữ nghĩa. Việc kết hợp các module được thiết kế bởi con người trong những mô hình này, cũng như sự gia tăng liên tục về độ phức tạp của mạng không thể phủ nhận rằng đã nâng cao hiệu suất. 
+\\
+\vspace*{-2mm}
+\\
+\hspace*{5mm}Tuy nhiên, các thách thức về việc tối ưu hóa và sự phức tạp vốn có của các mô hình transformer kêu gọi một sự chuyển đổi mô hình hướng tới sự đơn giản. Trong báo cáo này, chúng em sẽ giới thiệu về \textbf{VanillaNet}, một cấu trúc mạng neural network mang tính tinh tế trong thiết kế. Bằng cách tránh độ sâu cao, các lối tắt, và các thao tác phức tạp như self-attention, VanillaNet vô cùng ngắn gọn nhưng lại đáng kinh ngạc về sức mạnh. Mỗi tầng được chế tác một cách cẩn thận để trở nên gọn gàng và thẳng thắn, với các hàm kích hoạt phi tuyến được loại bỏ sau quá trình huấn luyện để phục hồi kiến trúc ban đầu. VanillaNet vượt qua những thách thức của sự phức tạp vốn có, khiến nó trở nên lý tưởng cho các môi trường hạn chế tài nguyên.
+
+\section*{2. Kiến trúc Vanilla Neural}\addcontentsline{toc}{section}{2. Kiến trúc Vanilla Neural}
+\hspace*{5mm}Với sự phát triển của chip AI, vấn đề bottleneck về tốc độ suy luận của mạng neural không phải là FLOPs hay các tham số mà là do độ sâu và tính phức tạp trong thiết kế 
+đã cản trở tốc độ. Để giải quyết vấn đề này, các tác giả của bài báo mà chúng em đang nghiên đã đề xuất VanillaNet[5], có cấu trúc được thể hiện trong Hình 1. VanillaNet tuân theo thiết kế phổ biến của mạng neural với stem block, main body và lớp fully connected. Khác với các mạng sâu hiện có, VanillaNet chỉ sử dụng một lớp trong mỗi giai đoạn để thiết lập một mạng cực kỳ đơn giản với số lượng lớp ít nhất có thể.
+\begin{figure}[h!]
+\centering
+\includegraphics[width=15cm]{vanillanet-6-structure.png}
+\caption*{\textbf{Hình 1.} Kiến trúc của mô hình VanillaNet-6}
+\end{figure}
+\newpage
+\hspace*{5mm}Chúng em sẽ làm rõ kiến trúc của VanillaNet trong phần này, lấy ví dụ là VanillaNet 6 như trong Hình 1. Đối với lớp stem, VanillaNet sẽ sử dụng một lớp tích chập 4x4x3x$\mathcal{C}$ với stride là 4 để chuyển đổi ảnh đầu vào 3 kênh màu (RGB) thành C kênh đặc trưng. Tại giai đoạn 1,2 và 3, một lớp maxpooling(stride=2) được sử dụng để giảm kích thước và feature map 2 lần đồng thời nó cũng tăng số lượng kênh lên gấp đôi sau mỗi giai đoạn. Ở giai đoạn 4, mạng không tăng số lượng kênh nữa mà thay vào đó là một lớp avarage pooling dùng để tóm tắt các thông tin đặc trưng đã học. Lớp cuối cùng là một lớp fully connected tương đương với output của mô hình phân loại này (lớp cuối cùng có kích thước 1x1x1000 vì mô hình này được huấn luyện trên bộ ImageNet-1K[6]). Kích thước kernel của mỗi lớp tích chập là 1x1 bởi vì VanillaNet hướng tới việc sử dụng tối thiểu chi phí cho mỗi lần tính toán mỗi lớp mà vẫn giữ thông tin của các feature map. Hàm kích hoạt được áp dụng sau mỗi lớp tích chập 1x1. Để đơn giản cho quá trình trainning của mạng, batch normalization cũng được thêm vào sau mỗi lớp. Cần lưu ý rằng VanillaNet không có skip connections, vì theo như trong bài báo có đề cập là các tác giả thấy việc thêm skip connections cho thấy ít cải thiện hiệu suất. Theo nhóm bọn em, việc cải thiện hiệu suât bằng cách thêm skip connections không có hiệu quả cao bởi vì mạng như VanillaNet thường không có số lượng lớp rất sâu (như ResNet hoặc DenseNet). Do đó, các vấn đề như mất mát thông tin hoặc vanishing gradient ít nghiêm trọng hơn.
+Khi mạng không quá sâu, dòng chảy thông tin và gradient có thể được bảo toàn đủ tốt mà không cần skip connections. Điều này cũng mang lại một lợi ích khác là kiến trúc được đề xuất cực kỳ dễ thực hiện vì không có nhánh và các blocks bổ sung như khối squeeze và excitation. 
+\\
+\vspace*{-2mm}
+\\
+\hspace*{5mm}Bởi vì kiến trúc của VanillaNet đơn giản và tương đối nông nên tính phi tuyến tính yếu của nó gây ra hạn chế hiệu suất, Do đó, trong bài báo cũng đã đề xuất một loạt các kỹ thuật để giải quyết vấn đề này.
+
+\section*{3. Huấn luyện mạng VanillaNet}\addcontentsline{toc}{section}{3. Huấn luyện mạng VanillaNet}
+\hspace*{5mm}Thông thường trong học sâu để nâng cao hiệu suất của các mô hình bằng cách giới thiệu khả năng mạnh mẽ hơn trong giai đoạn đào tạo [8]. Để đạt được mục tiêu này, bài báo đã đề xuất sử dụng kỹ thuật đào tạo sâu để nâng cao khả năng trong quá trình đào tạo trong VanillaNet được đề xuất, vì mạng sâu có tính phi tuyến tính mạnh hơn mạng nông.
+\subsection*{3.1. Chiến lược đào tạo sâu}\addcontentsline{toc}{subsection}{3.1. Chiến lược đào tạo sâu}
+\hspace*{5mm}Ý tưởng chính của chiến lược đào tạo sâu là huấn luyện hai lớp tích chập với một hàm kích hoạt thay vì một lớp tích chập ở giai đoạn ban đầu của quá trình huấn luyện. Hàm kích hoạt được giảm dần dần thành một ánh xạ đồng nhất với số chu kỳ huấn luyện gia tăng. Ở cuối giai đoạn huấn luyện, hai lớp tích chập có thể dễ dàng kết hợp lại thành một lớp tích chập để giảm thời gian suy luận. Dạng ý tưởng này đã đucợ sử dụng rộng rãi trong CNN [9,10,11,12]. Sau đây, chúng em sẽ mô tả cách tiến hành kỹ thuật một cách chi tiết.
+\\
+\vspace*{-2mm}
+\\
+\hspace*{5mm}Cho hàm kích hoạt $A(x)$ (các hàm thường sử dụng như ReLU và Tanh), chúng em kết hợp với một ánh xạ đồng nhất, có thể viết dưới dạng toán học như sau:
+\begin{center}
+    $A'(x) = (1-\lambda)A(x) + \lambda x \hspace*{5mm} \textbf{(1)}$
+\end{center}
+\hspace*{5mm} trong đó $\lambda$ là một siêu tham số để cân bằng tính phi tuyến tính của việc hàm kích hoạt $A'(x)$. Ký hiệu số chu kỳ hiện tại và tổng số chu kỳ của việc huấn luyện sâu lần lượt là $e$ và $E$. Đặt $\lambda = \frac{e}{E}$. Vì vậy, khi bắt đầu giai đoạn huấn luyện $(e=0)$, $A'(x) = A(x)$, có nghĩa rằng mạng sẽ có tính phi tuyến tính mạnh. Khi quá tình huấn luyện hội tụ, chúng ta sẽ có $A'(x) = x$, có nghĩa là giữa hai lớp tích chập không có bất cứ hàm kích hoạt nào.
+\end{document}
+% [1][https://papers.nips.cc/paper_files/paper/2017/file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf]
+% [2][https://papers.nips.cc/paper_files/paper/2012/file/c399862d3b9d6b76c8436e924a68c45b-Paper.pdf]
+% [3][https://arxiv.org/pdf/1512.03385]
+% [4][https://arxiv.org/pdf/1409.1556]
+% [5][https://arxiv.org/pdf/2305.12972]
+% [6][https://image-net.org/]
+% [7][https://arxiv.org/pdf/1709.01507]
+% [8][https://arxiv.org/pdf/2105.14202]
+% [9][https://arxiv.org/pdf/2103.13425]
+% [10][https://arxiv.org/pdf/2101.03697]
+% [11][https://arxiv.org/pdf/2203.06717]
+% [12][https://arxiv.org/pdf/1908.03930]
