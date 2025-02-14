@@ -1,5 +1,5 @@
 # Inverse Reinforcement Learning
-Implementation of [Linear Inverse Reinforcement Learning Algorithm](https://ai.stanford.edu/~ang/papers/icml00-irl.pdf) (IRL) on Mountain Car Environment. Mainly for experimental & educational purposes.
+Implementation of [Linear Inverse Reinforcement Learning Algorithm](https://ai.stanford.edu/~ang/papers/icml00-irl.pdf) and[LinearInverse RL algorithms Original Repo Github](https://github.com/vjg28/Linear-Inverse-RL-algorithms)(IRL) on Mountain Car Environment and Acrobot. Mainly for experimental & educational purposes.
 
 ## Overview 
 - The concept of Reinforcement learning was developed based on the sole presupposition that `Reward functions are the most succinct, robust and transferable defination of a task.` But, in cases like **robotic manipulations** and **self driving cars**, defining a reward function or hand-manifacturing a reward function become difficult or in some cases, almost impossible.  <img src="images/RL_IRL.jpg" align="center">
@@ -38,16 +38,8 @@ Implementation of [Linear Inverse Reinforcement Learning Algorithm](https://ai.s
 
 Install them using [pip](https://pip.pypa.io/en/stable)
 
-## Contributing 
-Please feel free to create a Pull Request for adding implementations of the IRL algorithms and improvements. If you are a beginner, you can refer to [this](https://opensource.guide/how-to-contribute/) for getting started.
-
-## Support
-If you found this useful, please consider starring(★) the repo so that it can reach a broader audience.
-
-## License
-This project is licensed under the MIT License - see the [LICENSE](../master/LICENSE) file for details.
-
 ## References
 - [Denny Britz RL repository for Q-learning algorithm](https://github.com/dennybritz/reinforcement-learning)
 - [Algorithms for Inverse Reinforcement Learning](https://ai.stanford.edu/~ang/papers/icml00-irl.pdf)
 - [Apprenticeship Learning using Inverse reinforcement Learning](https://ai.stanford.edu/~ang/papers/icml04-apprentice.pdf)
+- [LinearInverse RL algorithms Original Repo Github](https://github.com/vjg28/Linear-Inverse-RL-algorithms)
